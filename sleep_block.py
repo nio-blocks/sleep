@@ -25,6 +25,7 @@ class Sleep(Block):
         super().__init__()
         self._signals = []
         self._signals_lock = Lock()
+        self._load_signals = []
 
     def configure(self, context):
         super().configure(context)
@@ -32,28 +33,41 @@ class Sleep(Block):
 
     def start(self):
         super().start()
-        self._schedule_persistence_sleeps()
+        self._schedule_persistence_emits()
 
     def stop(self):
-        super().stop()
         self._store_signals(_time())
         self.persistence.save()
+        super().stop()
 
     def process_signals(self, signals):
         # After interval, notify these signals
-        emit = Job(self.notify_signals, self.interval, False, signals)
-        self._store_signals(_time() + self.interval.total_seconds(), signals)
+        self._emit_signals_after_duration(signals, self.interval)
 
-    def _schedule_persistence_sleeps(self):
+    def _schedule_persistence_emits(self):
         """ Schedule emit jobs for signals loaded from persistence """
         ctime = _time()
-        for (time, signals) in self._load_signals:
+        for (emit_time, signals) in self._load_signals:
             # get time to go before the signals should be notified
-            dtime = time - ctime
-            if dtime > 0 and signals:
-                dtime = timedelta(seconds=dtime)
-                Job(self.notify_signals, dtime, False, signals)
-                self._store_signals(time, signals)
+            duration = emit_time - ctime
+            if duration > 0 and signals:
+                duration = timedelta(seconds=duration)
+                self._emit_signals_after_duration(signals, duration, emit_time)
+
+    def _emit_signals_after_duration(self, signals, duration, emit_time=None):
+        """ Schedule job to emit signals after duration and stores signals
+
+        If emit_time is specified, then signals will be stored to persistence
+        with that time instead of `now + duration`.
+
+        Args:
+            signals (list[Signal]): list of signals to sleep
+            duration (timedelta): time to wait before emitting signals
+            emit_time (float): when to emit signals (seconds since the epoch)
+        """
+        Job(self.notify_signals, duration, False, signals)
+        emit_time = emit_time or _time() + duration.total_seconds()
+        self._store_signals(emit_time, signals)
 
     def _store_signals(self, notify_time, signals=None):
         """ Add new signals and trim old ones before storing """

@@ -1,4 +1,4 @@
-import time
+from time import time as _time
 from unittest.mock import MagicMock, patch
 from nio.util.support.block_test_case import NIOBlockTestCase
 from nio.modules.persistence.default import Persistence
@@ -36,13 +36,13 @@ class TestSleep(NIOBlockTestCase):
         blk.start()
         signals = [Signal({'name': 'signal1'}),
                    Signal({'name': 'signal2'})]
-        start = time.time()
+        start = _time()
         blk.process_signals(signals)
+        # check that signals are not notified immediately
+        # but are notified after a short wait
         self.assert_num_signals_notified(0)
-        e.wait()
-        end = time.time()
+        self.assertTrue(e.wait(2))
         self.assert_num_signals_notified(2)
-        self.assertTrue(0.1 < end - start < 0.5)
         blk.stop()
 
     def test_persist_save(self):
@@ -87,29 +87,31 @@ class TestSleep(NIOBlockTestCase):
         # assert that the second set of signals has a later time than the first
         self.assertTrue(blk._signals[0][0] < blk._signals[1][0])
 
-    @patch(Sleep.__module__ + '._time')
-    def test_persist_load(self, mock_time):
+    def test_persist_load(self):
+        ctime = _time()
         e = Event()
         blk = SleepEvent(e)
         signals1 = [Signal()]
         signals2 = [Signal(), Signal()]
-        signals = [(0, signals1), (1, signals2)]
+        signals = [(ctime, signals1), (ctime + 1, signals2)]
         with patch('nio.modules.persistence.default.Persistence.load') as load:
             load.return_value = signals
             self.configure_block(blk, {
                 'log_level': 'DEBUG',
                 'interval': {'seconds': 1}
             })
-        mock_time.return_value = 0.9
         blk.start()
-        # check that all signals were loaded but only two signals were put
-        # pack into _signals
+        # all signals load but only signals2 are put back into _signals
         self.assertEqual(blk._load_signals, signals)
         self.assertEqual(len(blk._signals), 1)
         self.assertEqual(len(blk._signals[0][1]), 2)
         self.assert_num_signals_notified(0)
-        e.wait()
+        # wait for signals2 to be notified
+        e.wait(2)
         self.assert_num_signals_notified(2)
+        # then when the block stops, no more signals are stored
+        blk.stop()
+        self.assertEqual(len(blk._signals), 0)
 
     def test_persist_load_nothing(self):
         e = Event()
@@ -121,3 +123,4 @@ class TestSleep(NIOBlockTestCase):
             })
         blk.start()
         self.assertEqual(blk._load_signals, [])
+        blk.stop()
