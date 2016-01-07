@@ -5,10 +5,11 @@ from nio.common.discovery import Discoverable, DiscoverableType
 from nio.metadata.properties import TimeDeltaProperty
 from nio.modules.scheduler import Job
 from nio.modules.threading import Lock
+from .mixins.persistence.persistence import Persistence
 
 
 @Discoverable(DiscoverableType.block)
-class Sleep(Block):
+class Sleep(Persistence, Block):
 
     """ Sleep block.
 
@@ -27,9 +28,16 @@ class Sleep(Block):
         self._signals_lock = Lock()
         self._load_signals = []
 
+    def persisted_values(self):
+        return {
+            "signals": "_signals"
+        }
+
     def configure(self, context):
         super().configure(context)
-        self._load_signals = self.persistence.load('signals') or []
+        # Save off the loaded signals to schedule on 'start'
+        self._load_signals = self._signals
+        self._signals = []
 
     def start(self):
         super().start()
@@ -37,7 +45,6 @@ class Sleep(Block):
 
     def stop(self):
         self._store_signals(_time())
-        self.persistence.save()
         super().stop()
 
     def process_signals(self, signals):
@@ -75,7 +82,6 @@ class Sleep(Block):
             if signals:
                 self._signals.append((notify_time, signals))
             self._signals = self._trim_old_signals(_time(), self._signals)
-            self.persistence.store('signals', self._signals)
 
     def _trim_old_signals(self, ctime, signals):
         """ Remove signals from `signals` older than `ctime` """
