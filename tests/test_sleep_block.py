@@ -21,7 +21,7 @@ class SleepEvent(Sleep):
 class TestSleep(NIOBlockTestCase):
 
     def get_test_modules(self):
-        return self.ServiceDefaultModules + ['persistence']
+        return super().get_test_modules() + ['persistence']
 
     def get_module_config_persistence(self):
         return {'persistence': 'default'}
@@ -69,13 +69,11 @@ class TestSleep(NIOBlockTestCase):
 
         # process some signals
         blk.process_signals(signals_a)
-        assert_persistence(1, 0)
         # process some more signals
         blk.process_signals(signals_b)
-        assert_persistence(2, 0)
         # stop the block and save persistence
         blk.stop()
-        assert_persistence(3, 1)
+        assert_persistence(1, 1)
 
         # the block should have stopped before any signals were notified
         self.assert_num_signals_notified(0)
@@ -94,8 +92,10 @@ class TestSleep(NIOBlockTestCase):
         signals1 = [Signal()]
         signals2 = [Signal(), Signal()]
         signals = [(ctime, signals1), (ctime + 1, signals2)]
-        with patch('nio.modules.persistence.default.Persistence.load') as load:
-            load.return_value = signals
+        with patch('nio.common.block.base.Persistence') as persist:
+            persist.return_value.load.return_value = signals
+            persist.return_value.has_key.side_effect = \
+                lambda key: key in ["signals"]
             self.configure_block(blk, {
                 'log_level': 'DEBUG',
                 'interval': {'seconds': 1}
