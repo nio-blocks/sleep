@@ -53,7 +53,7 @@ class Sleep(Persistence, Block):
     def process_signals(self, signals):
         # After interval, notify these signals
         for signal in signals:
-            self._emit_signals_after_duration(signals, self.interval(signal))
+            self._emit_signals_after_duration(signal, self.interval(signal))
 
     def _schedule_persistence_emits(self):
         """ Schedule emit jobs for signals loaded from persistence """
