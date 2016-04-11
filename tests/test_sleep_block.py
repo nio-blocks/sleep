@@ -47,6 +47,26 @@ class TestSleep(NIOBlockTestCase):
         self.assert_num_signals_notified(2)
         blk.stop()
 
+    def test_interval_expression(self):
+        '''Test that intervals work with expression properties.'''
+        e = Event()
+        blk = SleepEvent(e)
+        self.configure_block(blk, {
+            'log_level': 'DEBUG',
+            'interval': '{{ datetime.timedelta(seconds=$interval) }}'
+        })
+        blk.start()
+        signals = [Signal({'name': 'signal1', 'interval': 0.1}),
+                   Signal({'name': 'signal2', 'interval': 0.1})]
+        start = _time()
+        blk.process_signals(signals)
+        # check that signals are not notified immediately
+        # but are notified after a short wait
+        self.assert_num_signals_notified(0)
+        self.assertTrue(e.wait(2))
+        self.assert_num_signals_notified(2)
+        blk.stop()
+
     def test_persist_save(self):
         blk = Sleep()
         self.configure_block(blk, {
