@@ -1,14 +1,14 @@
 from datetime import timedelta
 from time import time as _time
-from nio.common.block.base import Block
-from nio.common.discovery import Discoverable, DiscoverableType
-from nio.metadata.properties import TimeDeltaProperty
+from nio.block.base import Block
+from nio.util.discovery import discoverable
+from nio.properties import TimeDeltaProperty
 from nio.modules.scheduler import Job
-from nio.modules.threading import Lock
-from .mixins.persistence.persistence import Persistence
+from threading import Lock
+from nio.block.mixins.persistence.persistence import Persistence
 
 
-@Discoverable(DiscoverableType.block)
+@discoverable
 class Sleep(Persistence, Block):
 
     """ Sleep block.
@@ -29,9 +29,7 @@ class Sleep(Persistence, Block):
         self._load_signals = []
 
     def persisted_values(self):
-        return {
-            "signals": "_signals"
-        }
+        return ["_signals"]
 
     def configure(self, context):
         super().configure(context)
@@ -47,9 +45,14 @@ class Sleep(Persistence, Block):
         self._store_signals(_time())
         super().stop()
 
+    def _save(self):
+        '''Override persistence'''
+        #TODO: when persistence is fixed, remove this
+        pass
+
     def process_signals(self, signals):
         # After interval, notify these signals
-        self._emit_signals_after_duration(signals, self.interval)
+        self._emit_signals_after_duration(signals, self.interval())
 
     def _schedule_persistence_emits(self):
         """ Schedule emit jobs for signals loaded from persistence """
