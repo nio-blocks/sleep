@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import timedelta
 from time import time as _time
 from nio.block.base import Block
@@ -45,19 +46,26 @@ class Sleep(Persistence, Block):
         self._store_signals(_time())
         super().stop()
 
-    def _save(self):
-        '''Override persistence'''
-        #TODO: when persistence is fixed, remove this
-        pass
-
     def process_signals(self, signals):
         # After interval, notify these signals
+        signals_by_interval = self._group_signals_by_interval(signals)
+        for signals in signals_by_interval.values():
+            self._emit_signals_after_duration(signals,
+                                              self.interval(signals[0]))
+
+    def _group_signals_by_interval(self, signals):
+        """Group signals by evaluated interval property"""
+        signals_by_interval = defaultdict(list)
         for signal in signals:
-            self._emit_signals_after_duration(signal, self.interval(signal))
+            signals_by_interval[self.interval(signal)].append(signal)
+        return signals_by_interval
 
     def _schedule_persistence_emits(self):
         """ Schedule emit jobs for signals loaded from persistence """
         ctime = _time()
+        self.logger.debug(
+            "Scheduling {} persisted sleep jobs".format(
+                len(self._load_signals)))
         for (emit_time, signals) in self._load_signals:
             # get time to go before the signals should be notified
             duration = emit_time - ctime
