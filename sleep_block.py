@@ -1,14 +1,15 @@
+from collections import defaultdict
 from datetime import timedelta
 from time import time as _time
-from nio.common.block.base import Block
-from nio.common.discovery import Discoverable, DiscoverableType
-from nio.metadata.properties import TimeDeltaProperty
+from nio.block.base import Block
+from nio.util.discovery import discoverable
+from nio.properties import TimeDeltaProperty
 from nio.modules.scheduler import Job
-from nio.modules.threading import Lock
-from .mixins.persistence.persistence import Persistence
+from threading import Lock
+from nio.block.mixins.persistence.persistence import Persistence
 
 
-@Discoverable(DiscoverableType.block)
+@discoverable
 class Sleep(Persistence, Block):
 
     """ Sleep block.
@@ -29,9 +30,7 @@ class Sleep(Persistence, Block):
         self._load_signals = []
 
     def persisted_values(self):
-        return {
-            "signals": "_signals"
-        }
+        return ["_signals"]
 
     def configure(self, context):
         super().configure(context)
@@ -49,11 +48,24 @@ class Sleep(Persistence, Block):
 
     def process_signals(self, signals):
         # After interval, notify these signals
-        self._emit_signals_after_duration(signals, self.interval)
+        signals_by_interval = self._group_signals_by_interval(signals)
+        for signals in signals_by_interval.values():
+            self._emit_signals_after_duration(signals,
+                                              self.interval(signals[0]))
+
+    def _group_signals_by_interval(self, signals):
+        """Group signals by evaluated interval property"""
+        signals_by_interval = defaultdict(list)
+        for signal in signals:
+            signals_by_interval[self.interval(signal)].append(signal)
+        return signals_by_interval
 
     def _schedule_persistence_emits(self):
         """ Schedule emit jobs for signals loaded from persistence """
         ctime = _time()
+        self.logger.debug(
+            "Scheduling {} persisted sleep jobs".format(
+                len(self._load_signals)))
         for (emit_time, signals) in self._load_signals:
             # get time to go before the signals should be notified
             duration = emit_time - ctime
