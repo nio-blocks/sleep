@@ -1,7 +1,6 @@
 from time import time as _time
 from unittest.mock import MagicMock, patch
 from nio.testing.block_test_case import NIOBlockTestCase
-from nio.modules.persistence.persistence import Persistence
 from threading import Event
 from nio.signal.base import Signal
 from ..sleep_block import Sleep
@@ -26,13 +25,10 @@ class EventSignal(Signal):
 
 class TestSleep(NIOBlockTestCase):
 
-    def assert_persistence(self, blk, store_count, save_count):
-        self.assertEqual(blk._persistence.store.call_count, store_count)
+    def assert_persistence(self, blk, save_count):
         self.assertEqual(blk._persistence.save.call_count, save_count)
-        self.assertEqual(blk._persistence.store.call_args[0][0],
-                        '_signals')
-        self.assertEqual(blk._persistence.store.call_args[0][1],
-                        blk._signals)
+        self.assertEqual(blk._persistence.save.call_args[0][0],
+                         {'_signals': blk._signals})
 
     def test_sleep_block(self):
         e = Event()
@@ -44,7 +40,6 @@ class TestSleep(NIOBlockTestCase):
         blk.start()
         signals = [Signal({'name': 'signal1'}),
                    EventSignal({'name': 'signal2'}, e)]
-        start = _time()
         blk.process_signals(signals)
         # check that signals are not notified immediately
         # but are notified after a short wait
@@ -54,7 +49,7 @@ class TestSleep(NIOBlockTestCase):
         blk.stop()
 
     def test_interval_expression(self):
-        '''Test that intervals work with expression properties.'''
+        """Test that intervals work with expression properties."""
         e = Event()
         blk = SleepEvent()
         self.configure_block(blk, {
@@ -64,7 +59,6 @@ class TestSleep(NIOBlockTestCase):
         blk.start()
         signals = [Signal({'name': 'signal1', 'interval': 0.1}),
                    EventSignal({'name': 'signal2', 'interval': 0.1}, e)]
-        start = _time()
         blk.process_signals(signals)
         # check that signals are not notified immediately
         # but are notified after a short wait
@@ -79,7 +73,6 @@ class TestSleep(NIOBlockTestCase):
             'log_level': 'DEBUG',
             'interval': {'seconds': 10}
         })
-        blk._persistence.store = MagicMock()
         blk._persistence.save = MagicMock()
         blk.start()
         signals_a = [Signal({'name': 'signal1'}),
@@ -92,7 +85,7 @@ class TestSleep(NIOBlockTestCase):
         blk.process_signals(signals_b)
         # stop the block and save persistence
         blk.stop()
-        self.assert_persistence(blk, 1, 1)
+        self.assert_persistence(blk, 1)
         # the block should have stopped before any signals were notified
         self.assert_num_signals_notified(0)
         # assert that two groups of signals were saved
@@ -130,7 +123,6 @@ class TestSleep(NIOBlockTestCase):
         self.assertEqual(len(blk._signals), 0)
 
     def test_persist_load_nothing(self):
-        e = Event()
         blk = SleepEvent()
         with patch('nio.modules.persistence.Persistence.load'):
             self.configure_block(blk, {
