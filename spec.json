@@ -1,19 +1,10 @@
 {
-    "nio/Sleep": {
-        "Properties": {
-            "interval": {
-                "description": "How long to wait before notifying signals"
-            }
-        },
-        "Version": "1.0.0",
-        "Output": {
-            "Description": "The same signals, but only output after a delay"
-        },
-        "Commands": {},
-        "Description": "Sleep for a given interval before passing through the signals",
-        "Category": "PathModifier",
-        "Input": {
-            "Description": "Any signals"
-        }
-    }
+  "nio/Sleep": {
+    "version": "0.0.1",
+    "description": "",
+    "inputs": {},
+    "outputs": {},
+    "properties": {},
+    "commands": {}
+  }
 }
