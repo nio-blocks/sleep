@@ -1,26 +1,27 @@
 Sleep
-===========
+=====
 
-Sleep for a given interval before passing through the signals
+Sleep for a given interval before passing input signals
 
 Properties
---------------
+----------
+- **backup_interval**: Interval to back up signals to persistence
+- **interval**: How long to wait before notifying signals
+- **load_from_persistence**: Whether to load persisted signals from persistence
 
--   **interval**: How long to wait before notifying signals
+Inputs
+------
 
+Any list of signals
 
-Dependencies
-----------------
-None
+Outputs
+-------
+
+Same list of signals after specified interval
 
 Commands
-----------------
+--------
+
+Dependencies
+------------
 None
-
-Input
--------
-Any signals
-
-Output
----------
-The same signals, but only output after a delay

@@ -1,11 +1,15 @@
 from time import time as _time
 from unittest.mock import MagicMock, patch
-from nio.testing.block_test_case import NIOBlockTestCase
 from threading import Event
+
+from nio.testing.block_test_case import NIOBlockTestCase
 from nio.signal.base import Signal
+from nio.util.discovery import not_discoverable
+
 from ..sleep_block import Sleep
 
 
+@not_discoverable
 class SleepEvent(Sleep):
 
     def notify_signals(self, signals):

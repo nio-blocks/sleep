@@ -1,15 +1,14 @@
 from collections import defaultdict
 from datetime import timedelta
 from time import time as _time
-from nio.block.base import Block
-from nio.util.discovery import discoverable
-from nio.properties import TimeDeltaProperty
-from nio.modules.scheduler import Job
 from threading import Lock
-from nio.block.mixins.persistence.persistence import Persistence
+
+from nio.block.base import Block
+from nio.properties import TimeDeltaProperty, VersionProperty
+from nio.modules.scheduler import Job
+from nio.block.mixins import Persistence
 
 
-@discoverable
 class Sleep(Persistence, Block):
 
     """ Sleep block.
@@ -22,6 +21,7 @@ class Sleep(Persistence, Block):
     """
 
     interval = TimeDeltaProperty(title='Interval', default={'seconds': 1})
+    version = VersionProperty("0.1.0")
 
     def __init__(self):
         super().__init__()
