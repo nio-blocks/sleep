@@ -2,6 +2,9 @@
   "nio/Sleep": {
     "version": "0.1.0",
     "description": "Sleep for a given interval before passing signals",
+    "categories": [
+      "Signal Flow"
+    ],
     "properties": {
       "backup_interval": {
         "title": "Backup Interval",
