@@ -21,7 +21,7 @@ class Sleep(Persistence, Block):
     """
 
     interval = TimeDeltaProperty(title='Interval', default={'seconds': 1})
-    version = VersionProperty("0.1.0")
+    version = VersionProperty("0.1.1")
 
     def __init__(self):
         super().__init__()

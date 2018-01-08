@@ -1,6 +1,6 @@
 {
   "nio/Sleep": {
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "The Sleep block will delay signals from being emitted for a configured interval of time.",
     "categories": [
       "Signal Flow"
