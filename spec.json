@@ -1,7 +1,7 @@
 {
   "nio/Sleep": {
     "version": "0.1.0",
-    "description": "Sleep for a given interval before passing signals",
+    "description": "The Sleep block will delay signals from being emitted for a configured interval of time.",
     "categories": [
       "Signal Flow"
     ],
@@ -9,7 +9,7 @@
       "backup_interval": {
         "title": "Backup Interval",
         "type": "TimeDeltaType",
-        "description": "Interval to back up signals to persistence",
+        "description": "An interval of time that specifies how often persisted data is saved.",
         "default": {
           "seconds": 3600
         }
@@ -17,7 +17,7 @@
       "interval": {
         "title": "Interval",
         "type": "TimeDeltaType",
-        "description": "How long to wait before notifying signals",
+        "description": "How long to wait before emitting signals.",
         "default": {
           "seconds": 1
         }
@@ -25,18 +25,18 @@
       "load_from_persistence": {
         "title": "Load from Persistence?",
         "type": "BoolType",
-        "description": "Whether to load persisted signals from persistence",
+        "description": "If `True`, the block’s state will be saved when the block is stopped, and reloaded once the block is restarted.",
         "default": true
       }
     },
     "inputs": {
       "default": {
-        "description": "Any list of signals"
+        "description": "Any list of signals."
       }
     },
     "outputs": {
       "default": {
-        "description": "Same list of signals after specified interval"
+        "description": "Same list of signals after specified time 'interval'."
       }
     },
     "commands": {}
